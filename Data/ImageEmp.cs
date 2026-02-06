@@ -7,6 +7,7 @@ public class ImageEmp
     public int Id { get; set; }
     public string Name { get; set; }
     public string Nickname { get; set; }
+    public string Empposition { get; set; }
     public string Tel { get; set; }
     public string FileName { get; set; }
     public byte[] ImageFile { get; set; }

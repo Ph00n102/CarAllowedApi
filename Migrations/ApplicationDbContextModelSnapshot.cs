@@ -81,6 +81,10 @@ namespace CarAllowedApi.Migrations
                     b.Property<string>("EmpStatusId")
                         .HasColumnType("longtext");
 
+                    b.Property<string>("Empposition")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
                     b.Property<string>("FileName")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -107,6 +111,39 @@ namespace CarAllowedApi.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("ImageEmps");
+                });
+
+            modelBuilder.Entity("CarAllowedApi.Data.ImageFile", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<byte[]>("FileData")
+                        .IsRequired()
+                        .HasColumnType("longblob");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("JobRequestCarId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JobRequestCarId");
+
+                    b.ToTable("ImageFiles");
                 });
 
             modelBuilder.Entity("CarAllowedApi.Data.JobImage", b =>
@@ -146,6 +183,9 @@ namespace CarAllowedApi.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("AlongWith")
+                        .HasColumnType("longtext");
+
                     b.Property<DateOnly>("DateNow")
                         .HasColumnType("date");
 
@@ -153,6 +193,9 @@ namespace CarAllowedApi.Migrations
                         .HasColumnType("longtext");
 
                     b.Property<string>("Destination")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("District")
                         .HasColumnType("longtext");
 
                     b.Property<DateOnly>("EDateNow")
@@ -167,17 +210,50 @@ namespace CarAllowedApi.Migrations
                     b.Property<TimeOnly>("EndTime")
                         .HasColumnType("time(0)");
 
+                    b.Property<string>("For")
+                        .HasColumnType("longtext");
+
                     b.Property<int?>("GarageId")
                         .HasColumnType("int");
 
                     b.Property<int?>("ImageEmpId")
                         .HasColumnType("int");
 
+                    b.Property<DateOnly>("IssueDate")
+                        .HasColumnType("date");
+
+                    b.Property<TimeOnly>("IssueTime")
+                        .HasColumnType("time(0)");
+
+                    b.Property<DateOnly>("JDDate")
+                        .HasColumnType("date");
+
+                    b.Property<TimeOnly>("JDTime")
+                        .HasColumnType("time(0)");
+
+                    b.Property<string>("JobNumber")
+                        .HasColumnType("longtext");
+
                     b.Property<int>("JobStatusId")
                         .HasColumnType("int");
 
+                    b.Property<string>("Location")
+                        .HasColumnType("longtext");
+
+                    b.Property<TimeOnly>("LocationTime")
+                        .HasColumnType("time(0)");
+
+                    b.Property<string>("MileageBack")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("MileageOut")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("Note")
                         .HasColumnType("longtext");
+
+                    b.Property<int?>("NumOil")
+                        .HasColumnType("int");
 
                     b.Property<int?>("NumPer")
                         .HasColumnType("int");
@@ -185,8 +261,32 @@ namespace CarAllowedApi.Migrations
                     b.Property<string>("Origin")
                         .HasColumnType("longtext");
 
+                    b.Property<string>("Ot")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("PerApplicant")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("PerPosition")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Position")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Price")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Province")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("Requester")
                         .HasColumnType("longtext");
+
+                    b.Property<DateOnly>("ReturnDate")
+                        .HasColumnType("date");
+
+                    b.Property<TimeOnly>("ReturnTime")
+                        .HasColumnType("time(0)");
 
                     b.Property<DateOnly>("StartDate")
                         .HasColumnType("date");
@@ -194,10 +294,22 @@ namespace CarAllowedApi.Migrations
                     b.Property<TimeOnly>("StartTime")
                         .HasColumnType("time(0)");
 
+                    b.Property<DateOnly>("StatusDate")
+                        .HasColumnType("date");
+
+                    b.Property<TimeOnly>("StatusTime")
+                        .HasColumnType("time(0)");
+
                     b.Property<string>("Tel")
                         .HasColumnType("longtext");
 
                     b.Property<TimeOnly>("TimeNow")
+                        .HasColumnType("time(0)");
+
+                    b.Property<DateOnly>("UpNDate")
+                        .HasColumnType("date");
+
+                    b.Property<TimeOnly>("UpNTime")
                         .HasColumnType("time(0)");
 
                     b.HasKey("Id");
@@ -229,6 +341,17 @@ namespace CarAllowedApi.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("JobStatuses");
+                });
+
+            modelBuilder.Entity("CarAllowedApi.Data.ImageFile", b =>
+                {
+                    b.HasOne("CarAllowedApi.Data.JobRequestCar", "JobRequestCar")
+                        .WithMany()
+                        .HasForeignKey("JobRequestCarId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("JobRequestCar");
                 });
 
             modelBuilder.Entity("CarAllowedApi.Data.JobImage", b =>

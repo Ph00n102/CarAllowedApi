@@ -52,7 +52,7 @@
               "target": "Package",
               "version": "[1.2.0, )"
             },
-            "Microsoft.AspNetCore.SignalR.Common": {
+            "Microsoft.AspNetCore.SignalR.Client": {
               "target": "Package",
               "version": "[9.0.0, )"
             },

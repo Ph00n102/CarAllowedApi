@@ -8,4 +8,5 @@ public class JobImage
     public string FileName { get; set; }
     public byte[] ImageFile { get; set; }
     public int OpNoteDetailId { get; set; }
+    
 }

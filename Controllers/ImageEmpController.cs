@@ -166,7 +166,7 @@ namespace CarAllowedApi.Controllers
         }
 
         [HttpGet("GetCarImages")]
-        public async Task<ActionResult<ImageEmp[]>> GetCarImages()
+        public async Task<ActionResult<ImageGDto[]>> GetCarImages()
         {
             try
             {

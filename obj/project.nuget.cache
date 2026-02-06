@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "Scd2dF1e604=",
+  "dgSpecHash": "oy7D3ct2Cb8=",
   "success": true,
   "projectFilePath": "D:\\CarAllowedApi\\CarAllowedApi.csproj",
   "expectedPackageFiles": [
@@ -14,13 +14,16 @@
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.aspnetcore.http\\2.3.0\\microsoft.aspnetcore.http.2.3.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.aspnetcore.http.abstractions\\2.3.0\\microsoft.aspnetcore.http.abstractions.2.3.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.aspnetcore.http.connections\\1.2.0\\microsoft.aspnetcore.http.connections.1.2.0.nupkg.sha512",
-    "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.aspnetcore.http.connections.common\\1.2.0\\microsoft.aspnetcore.http.connections.common.1.2.0.nupkg.sha512",
+    "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.aspnetcore.http.connections.client\\9.0.0\\microsoft.aspnetcore.http.connections.client.9.0.0.nupkg.sha512",
+    "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.aspnetcore.http.connections.common\\9.0.0\\microsoft.aspnetcore.http.connections.common.9.0.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.aspnetcore.http.extensions\\2.3.0\\microsoft.aspnetcore.http.extensions.2.3.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.aspnetcore.http.features\\2.3.0\\microsoft.aspnetcore.http.features.2.3.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.aspnetcore.openapi\\9.0.1\\microsoft.aspnetcore.openapi.9.0.1.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.aspnetcore.routing\\2.3.0\\microsoft.aspnetcore.routing.2.3.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.aspnetcore.routing.abstractions\\2.3.0\\microsoft.aspnetcore.routing.abstractions.2.3.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.aspnetcore.signalr\\1.2.0\\microsoft.aspnetcore.signalr.1.2.0.nupkg.sha512",
+    "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.aspnetcore.signalr.client\\9.0.0\\microsoft.aspnetcore.signalr.client.9.0.0.nupkg.sha512",
+    "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.aspnetcore.signalr.client.core\\9.0.0\\microsoft.aspnetcore.signalr.client.core.9.0.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.aspnetcore.signalr.common\\9.0.0\\microsoft.aspnetcore.signalr.common.9.0.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.aspnetcore.signalr.core\\1.2.0\\microsoft.aspnetcore.signalr.core.1.2.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.aspnetcore.signalr.protocols.json\\9.0.0\\microsoft.aspnetcore.signalr.protocols.json.9.0.0.nupkg.sha512",
@@ -76,13 +79,14 @@
     "C:\\Users\\Administrator\\.nuget\\packages\\system.composition.runtime\\7.0.0\\system.composition.runtime.7.0.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\system.composition.typedparts\\7.0.0\\system.composition.typedparts.7.0.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\system.io.pipelines\\8.0.0\\system.io.pipelines.8.0.0.nupkg.sha512",
+    "C:\\Users\\Administrator\\.nuget\\packages\\system.net.serversentevents\\9.0.0\\system.net.serversentevents.9.0.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\system.net.websockets.websocketprotocol\\5.1.0\\system.net.websockets.websocketprotocol.5.1.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\system.reflection.emit\\4.7.0\\system.reflection.emit.4.7.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\system.reflection.metadata\\7.0.0\\system.reflection.metadata.7.0.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\system.runtime.compilerservices.unsafe\\6.0.0\\system.runtime.compilerservices.unsafe.6.0.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\system.text.encodings.web\\8.0.0\\system.text.encodings.web.8.0.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\system.text.json\\9.0.5\\system.text.json.9.0.5.nupkg.sha512",
-    "C:\\Users\\Administrator\\.nuget\\packages\\system.threading.channels\\8.0.0\\system.threading.channels.8.0.0.nupkg.sha512"
+    "C:\\Users\\Administrator\\.nuget\\packages\\system.threading.channels\\9.0.0\\system.threading.channels.9.0.0.nupkg.sha512"
   ],
   "logs": []
 }

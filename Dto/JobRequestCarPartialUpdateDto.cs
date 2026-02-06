@@ -4,8 +4,8 @@ namespace CarAllowedApi.Dto
 {
     public class JobRequestCarPartialUpdateDto
     {
-        public DateOnly? EDateNow { get; set; }
-        public TimeOnly? ETimeNow { get; set; }
+        public DateOnly? StatusDate { get; set; }  //วันที่ที่สิ้นสุดการทำงาน
+        public TimeOnly? StatusTime { get; set; }  //เวลาที่สิ้นสุดการทำงาน
         public int? JobStatusId { get; set; }
     }
 }

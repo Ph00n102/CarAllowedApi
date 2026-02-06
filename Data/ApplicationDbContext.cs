@@ -15,4 +15,5 @@ public class ApplicationDbContext : DbContext
     public DbSet<JobStatus> JobStatuses { get; set; }
     public DbSet<ImageEmp> ImageEmps { get; set; }
     public DbSet<Garage> Garages { get; set; }
+    public DbSet<ImageFile> ImageFiles { get; set; }
 }

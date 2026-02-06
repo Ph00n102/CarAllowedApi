@@ -134,3 +134,8 @@ D:\CarAllowedApi\obj\Debug\net9.0\refint\CarAllowedApi.dll
 D:\CarAllowedApi\obj\Debug\net9.0\CarAllowedApi.pdb
 D:\CarAllowedApi\obj\Debug\net9.0\CarAllowedApi.genruntimeconfig.cache
 D:\CarAllowedApi\obj\Debug\net9.0\ref\CarAllowedApi.dll
+D:\CarAllowedApi\obj\Debug\net9.0\CarAllowedApi.sourcelink.json
+D:\CarAllowedApi\bin\Debug\net9.0\Microsoft.AspNetCore.Http.Connections.Client.dll
+D:\CarAllowedApi\bin\Debug\net9.0\Microsoft.AspNetCore.SignalR.Client.dll
+D:\CarAllowedApi\bin\Debug\net9.0\Microsoft.AspNetCore.SignalR.Client.Core.dll
+D:\CarAllowedApi\bin\Debug\net9.0\System.Net.ServerSentEvents.dll

@@ -13,7 +13,7 @@ namespace CarAllowedApi.Services
         Task<ImageEmp> UpdateImageAsync(ImageEmpUpdateDto dto);
         Task DeleteImageAsync(int id);
 
-        Task<Garage[]> GetCarImageAsync();
+        Task<ImageGDto[]> GetCarImageAsync();
         Task<Garage?> GetCarImageByIdFirstAsync(int id);
         Task<Garage> SaveCarImageAsync(GarageDto dto);
         Task<Garage> UpdateCarImageAsync(GarageDto dto);
@@ -128,11 +128,28 @@ namespace CarAllowedApi.Services
         }
 
 
-        public async Task<Garage[]> GetCarImageAsync()
+        // public async Task<Garage[]> GetCarImageAsync()
+        // {
+        //     return await _dbContext.Garages
+        //         .AsNoTracking()
+        //         .OrderByDescending(x => x.Id) // เรียงตาม ID ล่าสุดขึ้นก่อน
+        //         .ToArrayAsync();
+        // }
+        public async Task<ImageGDto[]> GetCarImageAsync()
         {
             return await _dbContext.Garages
                 .AsNoTracking()
-                .OrderByDescending(x => x.Id) // เรียงตาม ID ล่าสุดขึ้นก่อน
+                .OrderByDescending(x => x.Id)
+                .Select(g => new ImageGDto
+                {
+                    // Map แต่ละ property จาก Garage ไปยัง ImageGDto
+                    Id = g.Id,
+                    CarRegistration = g.CarRegistration, // ตัวอย่าง property
+                    Carmodel = g.Carmodel, // ตัวอย่าง property
+                    CarStatusId = g.CarStatusId, // ตัวอย่าง property
+                    CarProvince = g.CarProvince, // ตัวอย่าง property
+                    Cartype = g.Cartype
+                })
                 .ToArrayAsync();
         }
         public async Task<Garage?> GetCarImageByIdFirstAsync(int id)
