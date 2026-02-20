@@ -105,8 +105,8 @@ public class JobRequestCarService : IJobRequestCarService
             .Include(j => j.JobStatus)
             .Include(j => j.ImageEmp)  // เพิ่ม Include ImageEmp
             .Include(j => j.Garage)
-            .OrderBy(x => x.StartDate)
-            .Where(j => (j.DateNow == today || j.StartDate == today) && !(j.JobStatusId == 3 || j.JobStatusId == 4))  // เปรียบเทียบ DateOnly โดยตรง
+            .Where(j => (j.DateNow == today || j.StartDate == today) )  // เปรียบเทียบ DateOnly โดยตรง
+            .OrderBy(j => j.StartDate)
             .ToListAsync();
     }
 
@@ -340,22 +340,26 @@ public class JobRequestCarService : IJobRequestCarService
    public async Task<JobRequestCarAllDayDto[]> GetAllListtoDayJobRequestCarsAsync(string name = null)
     {
         var today = DateOnly.FromDateTime(DateTime.Today);
+        
         var query = _context.JobRequestCars
             .AsNoTracking()
             .Include(j => j.JobStatus)
             .Include(j => j.ImageEmp)
             .Include(j => j.Garage)
-            .Where(j => (j.DateNow == today || j.StartDate == today) && !(j.JobStatusId == 3 || j.JobStatusId == 4))
-            .AsQueryable();
+            .Where(j => (j.DateNow == today || j.StartDate == today) 
+                        && !(j.JobStatusId == 3 || j.JobStatusId == 4));
 
         // เพิ่มเงื่อนไขกรองตาม name ถ้าไม่ใช่ null หรือว่างเปล่า
-         if (!string.IsNullOrEmpty(name))
+        if (!string.IsNullOrEmpty(name))
         {
             query = query.Where(j => EF.Functions.Like(j.Requester, $"%{name}%"));
         }
         
+        // เรียงลำดับเพียงครั้งเดียวที่จุดนี้
+        query = query.OrderBy(j => j.StartDate)
+                    .ThenBy(j => j.Id);
+        
         return await query
-            .OrderBy(x => x.StartDate)
             .Select(g => new JobRequestCarAllDayDto
             {
                 Id = g.Id,
@@ -388,10 +392,10 @@ public class JobRequestCarService : IJobRequestCarService
                 JobNumber = g.JobNumber,
                 ReturnTime = g.ReturnTime,
                 
-                // เพิ่ม mapping สำหรับ navigation properties
-                JobStatus = g.JobStatus,                     // เพิ่มบรรทัดนี้
-                ImageEmp = g.ImageEmp,                       // เพิ่มบรรทัดนี้
-                Garage = g.Garage                            // เพิ่มบรรทัดนี้
+                // mapping สำหรับ navigation properties
+                JobStatus = g.JobStatus,
+                ImageEmp = g.ImageEmp,
+                Garage = g.Garage
             })
             .ToArrayAsync();
     }
@@ -1091,45 +1095,61 @@ public class JobRequestCarService : IJobRequestCarService
     {
         try
         {
-            // ลองแปลงด้วยรูปแบบมาตรฐานก่อน
-            if (DateOnly.TryParse(dateString, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly date))
+            // ถ้าเป็น null หรือ empty ให้ใช้วันที่ปัจจุบัน
+            if (string.IsNullOrEmpty(dateString))
             {
-                return date;
+                return DateOnly.FromDateTime(DateTime.Now);
             }
-            
-            // ถ้าไม่ได้ ให้ลองแยกส่วนและตรวจสอบ
-            var parts = dateString.Split('-');
-            if (parts.Length == 3 && int.TryParse(parts[0], out int year))
+
+            // ลองแยกส่วนของวันที่
+            var parts = dateString.Split('-', '/', ' ');
+            if (parts.Length >= 3)
             {
-                // ตรวจสอบว่าปีเป็น พ.ศ. หรือค.ศ.
-                // ถ้าปีอยู่ในช่วง พ.ศ. (มากกว่า 2400)
-                if (year > 2400 && year < 2500)  // หรือใช้ year > 2400
+                // ทำความสะอาดส่วนของปี (อาจมี เวลา ต่อท้าย)
+                string yearStr = parts[0].Trim();
+                
+                // ตัดเอาเฉพาะตัวเลขแรกหากมีช่องว่าง
+                if (yearStr.Contains(' '))
                 {
-                    // แปลงจาก พ.ศ. เป็น ค.ศ.
-                    year = year - 543;
-                    string convertedDateString = $"{year}-{parts[1]}-{parts[2]}";
+                    yearStr = yearStr.Split(' ')[0];
+                }
+
+                if (int.TryParse(yearStr, out int year))
+                {
+                    int month = int.Parse(parts[1]);
+                    int day = int.Parse(parts[2].Split(' ')[0]); // ตัดเวลาออกถ้ามี
+
+                    // ถ้าปีมากกว่า 2400 (เป็น พ.ศ.)
+                    if (year > 2400)
+                    {
+                        // แปลงจาก พ.ศ. เป็น ค.ศ.
+                        year = year - 543;
+                    }
                     
-                    if (DateOnly.TryParse(convertedDateString, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly convertedDate))
+                    // สร้าง DateTime string ใหม่ในรูปแบบที่แน่นอน
+                    string formattedDate = $"{year}-{month:D2}-{day:D2}";
+                    
+                    if (DateOnly.TryParseExact(formattedDate, "yyyy-MM-dd", 
+                        CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly result))
                     {
-                        return convertedDate;
-                    }
-                }
-                else if (year > 1900 && year < 2100)  // ค.ศ. ในช่วงปัจจุบัน
-                {
-                    // ลองแปลงใหม่ด้วยรูปแบบที่ชัดเจน
-                    string formattedDate = $"{year}-{parts[1]}-{parts[2]}";
-                    if (DateOnly.TryParse(formattedDate, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly christianDate))
-                    {
-                        return christianDate;
+                        return result;
                     }
                 }
             }
             
-            throw new ArgumentException($"Invalid date format: {dateString}");
+            // ถ้าทุกวิธีล้มเหลว ให้ลองใช้ DateTime.Parse
+            DateTime dt = DateTime.Parse(dateString, CultureInfo.InvariantCulture);
+            if (dt.Year > 2400)
+            {
+                dt = dt.AddYears(-543);
+            }
+            return DateOnly.FromDateTime(dt);
         }
         catch (Exception ex)
         {
-            throw new ArgumentException($"Error parsing date '{dateString}': {ex.Message}");
+            // ถ้าแปลงไม่ได้ ให้ใช้วันที่ปัจจุบัน
+            Console.WriteLine($"Error parsing date '{dateString}': {ex.Message}");
+            return DateOnly.FromDateTime(DateTime.Now);
         }
     }
 
