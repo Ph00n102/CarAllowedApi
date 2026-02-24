@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 using CarAllowedApi.Data;
+using CarAllowedApi.DTOs;
 
 namespace CarAllowedApi.Dto;
 
@@ -28,15 +29,18 @@ public class JobRequestCarAllDayDto
     public virtual Garage? Garage { get; set; }
     public int? NumPer { get; set; } //จำนวนคน
     public string? Tel { get; set; } //เบอร์ติดต่อ
-    public string? Note { get; set; } 
-    public string? Ot { get; set; } 
-    public string? MileageOut { get; set; } 
-    public string? MileageBack { get; set; } 
+    public string? Note { get; set; }
+    public string? Ot { get; set; }
+    public string? MileageOut { get; set; }
+    public string? MileageBack { get; set; }
     public int? NumOil { get; set; } //จำนวนน้ำมัน
-    public string? Price { get; set; } 
-    public string? JobNumber { get; set; } 
+    public string? Price { get; set; }
+    public string? JobNumber { get; set; }
     public DateOnly IssueDate { get; set; }  //วันที่ที่ออกทำงาน
     public TimeOnly IssueTime { get; set; }  //เวลาที่ออกทำงาน
     public DateOnly ReturnDate { get; set; }  //วันที่ที่กลับจากทำงาน
     public TimeOnly ReturnTime { get; set; }  //เวลาที่กลับจากทำงาน
+    public ImageFileDto[] ImageFiles { get; set; }
+    public string? Location { get; set; }
+    public TimeOnly LocationTime { get; set; }
 }

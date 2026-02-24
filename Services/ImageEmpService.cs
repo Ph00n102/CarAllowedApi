@@ -152,11 +152,31 @@ namespace CarAllowedApi.Services
                 })
                 .ToArrayAsync();
         }
+        // public async Task<Garage?> GetCarImageByIdFirstAsync(int id)
+        // {
+        //     return await _dbContext.Garages
+        //         .AsNoTracking()
+        //         .FirstOrDefaultAsync(img => img.Id == id);
+        // }
         public async Task<Garage?> GetCarImageByIdFirstAsync(int id)
         {
             return await _dbContext.Garages
                 .AsNoTracking()
-                .FirstOrDefaultAsync(img => img.Id == id);
+                .OrderByDescending(x => x.Id)
+                .Where(g => g.Id == id)
+                .Select(g => new Garage
+                {
+                    Id = g.Id,
+                    CarRegistration = g.CarRegistration,
+                    Carmodel = g.Carmodel,
+                    Cartype = g.Cartype,
+                    CarStatusId = g.CarStatusId,
+                    CarProvince = g.CarProvince,
+                    FileName = g.FileName,
+                    ImageFile = g.ImageFile
+                    // ไม่ต้องใส่ properties ที่ไม่ต้องการ
+                })
+                .FirstOrDefaultAsync();
         }
         public async Task<Garage> SaveCarImageAsync(GarageDto dto)
         {
