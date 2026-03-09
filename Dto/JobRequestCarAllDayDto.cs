@@ -17,6 +17,7 @@ public class JobRequestCarAllDayDto
     public string? DepartmentId { get; set; } //หน่วยงาน
     public string? Origin { get; set; } //ต้นทาง
     public string? Destination { get; set; } //ปลายทาง
+    public string? PerApplicant { get; set; } //ปลายทาง
     public DateOnly StartDate { get; set; }  //วันที่ที่เริ่มทำงาน
     public TimeOnly StartTime { get; set; }  //เวลาที่เริ่มทำงาน
     public DateOnly EndDate { get; set; }  //วันที่ที่สิ้นสุดการทำงาน

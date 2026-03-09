@@ -28,6 +28,7 @@ public interface IJobRequestCarService
     Task<JobRequestCar?> UpdateJobAcceptingAsync(int id, JobAcceptingDto dto);
     Task<JobRequestCarAllDayDto[]> GetAllListDayJobRequestCarsAsync(string name , int statusId);
     Task<JobRequestCarAllDayDto[]> GetAllListtoDayJobRequestCarsAsync(string name);
+    Task<JobRequestCarAllDayDto[]> GetAllListtoDay1JobRequestCarsAsync(string name, string pername);
 
     // เปลี่ยน string เป็น int
     Task<IEnumerable<JobStatus>> GetAllJobStatusesAsync();
@@ -118,7 +119,8 @@ public class JobRequestCarService : IJobRequestCarService
 
         return await _context.JobRequestCars
             .AsNoTracking()
-            .Where(j => j.DateNow == today || j.StartDate == today)
+            // .Where(j => j.DateNow == today || j.StartDate == today )
+            .Where(j => (j.DateNow == today || j.StartDate == today) && j.JobStatusId != 6)
             .OrderBy(j => j.StartDate)
             .Select(j => new JobRequestCarAllDayDto
             {
@@ -609,7 +611,7 @@ public class JobRequestCarService : IJobRequestCarService
         // เพิ่มเงื่อนไขกรองตาม name
         if (!string.IsNullOrEmpty(name))
         {
-            query = query.Where(j => EF.Functions.Like(j.Requester, $"%{name}%"));
+            query = query.Where(j => EF.Functions.Like(j.Requester, $"%{name}%") || EF.Functions.Like(j.PerApplicant, $"%{name}%"));
         }
         
         // เรียงลำดับและเลือกเฉพาะข้อมูลที่ต้องการ
@@ -647,6 +649,92 @@ public class JobRequestCarService : IJobRequestCarService
                 ReturnDate = j.ReturnDate,
                 JobNumber = j.JobNumber,
                 ReturnTime = j.ReturnTime,
+                PerApplicant = j.PerApplicant,
+                
+                // สร้าง objects ใหม่เฉพาะฟิลด์ที่จำเป็น
+                JobStatus = j.JobStatus == null ? null : new JobStatus
+                {
+                    Id = j.JobStatus.Id,
+                    Status = j.JobStatus.Status,
+                    Description = j.JobStatus.Description
+                },
+                
+                ImageEmp = j.ImageEmp == null ? null : new ImageEmp
+                {
+                    Id = j.ImageEmp.Id,
+                    Name = j.ImageEmp.Name,
+                    Nickname = j.ImageEmp.Nickname,
+                    Empposition = j.ImageEmp.Empposition,
+                    Tel = j.ImageEmp.Tel
+                },
+                
+                Garage = j.Garage == null ? null : new Garage
+                {
+                    Id = j.Garage.Id,
+                    CarRegistration = j.Garage.CarRegistration,
+                    Carmodel = j.Garage.Carmodel,
+                    Cartype = j.Garage.Cartype,
+                    CarStatusId = j.Garage.CarStatusId,
+                    CarProvince = j.Garage.CarProvince
+                }
+            })
+            .ToArrayAsync();
+    }
+   public async Task<JobRequestCarAllDayDto[]> GetAllListtoDay1JobRequestCarsAsync(string name = null, string pername = null)
+    {
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        
+        var query = _context.JobRequestCars
+            .AsNoTracking()
+            .Where(j => (j.DateNow == today || j.StartDate == today) 
+                        && !(j.JobStatusId == 3 || j.JobStatusId == 4));
+
+        // เพิ่มเงื่อนไขกรองตาม name
+        if (!string.IsNullOrEmpty(name))
+        {
+            query = query.Where(j => EF.Functions.Like(j.Requester, $"%{name}%"));
+        }
+        if (!string.IsNullOrEmpty(pername))
+        {
+            query = query.Where(j => EF.Functions.Like(j.PerApplicant, $"%{pername}%"));
+        }
+        
+        // เรียงลำดับและเลือกเฉพาะข้อมูลที่ต้องการ
+        return await query
+            .OrderBy(j => j.StartDate)
+            .ThenBy(j => j.Id)
+            .Select(j => new JobRequestCarAllDayDto
+            {
+                Id = j.Id,
+                DateNow = j.DateNow,
+                TimeNow = j.TimeNow,
+                EDateNow = j.EDateNow,
+                ETimeNow = j.ETimeNow,
+                Requester = j.Requester,
+                DepartmentId = j.DepartmentId,
+                Origin = j.Origin,
+                Destination = j.Destination,
+                StartDate = j.StartDate,
+                StartTime = j.StartTime,
+                EndDate = j.EndDate,
+                EndTime = j.EndTime,
+                JobStatusId = j.JobStatusId,
+                ImageEmpId = j.ImageEmpId,
+                GarageId = j.GarageId,
+                NumPer = j.NumPer,
+                Tel = j.Tel,
+                Note = j.Note,
+                Ot = j.Ot,
+                MileageOut = j.MileageOut,
+                MileageBack = j.MileageBack,
+                NumOil = j.NumOil,
+                Price = j.Price,
+                IssueDate = j.IssueDate,
+                IssueTime = j.IssueTime,
+                ReturnDate = j.ReturnDate,
+                JobNumber = j.JobNumber,
+                ReturnTime = j.ReturnTime,
+                PerApplicant = j.PerApplicant,
                 
                 // สร้าง objects ใหม่เฉพาะฟิลด์ที่จำเป็น
                 JobStatus = j.JobStatus == null ? null : new JobStatus

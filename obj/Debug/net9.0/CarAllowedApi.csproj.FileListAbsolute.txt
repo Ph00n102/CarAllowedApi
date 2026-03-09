@@ -7,7 +7,10 @@ D:\CarAllowedApi\bin\Debug\net9.0\CarAllowedApi.runtimeconfig.json
 D:\CarAllowedApi\bin\Debug\net9.0\CarAllowedApi.dll
 D:\CarAllowedApi\bin\Debug\net9.0\CarAllowedApi.pdb
 D:\CarAllowedApi\bin\Debug\net9.0\Humanizer.dll
+D:\CarAllowedApi\bin\Debug\net9.0\Microsoft.AspNetCore.Http.Connections.Client.dll
 D:\CarAllowedApi\bin\Debug\net9.0\Microsoft.AspNetCore.OpenApi.dll
+D:\CarAllowedApi\bin\Debug\net9.0\Microsoft.AspNetCore.SignalR.Client.dll
+D:\CarAllowedApi\bin\Debug\net9.0\Microsoft.AspNetCore.SignalR.Client.Core.dll
 D:\CarAllowedApi\bin\Debug\net9.0\Microsoft.Bcl.AsyncInterfaces.dll
 D:\CarAllowedApi\bin\Debug\net9.0\Microsoft.Build.Locator.dll
 D:\CarAllowedApi\bin\Debug\net9.0\Microsoft.CodeAnalysis.dll
@@ -44,6 +47,7 @@ D:\CarAllowedApi\bin\Debug\net9.0\System.Composition.Convention.dll
 D:\CarAllowedApi\bin\Debug\net9.0\System.Composition.Hosting.dll
 D:\CarAllowedApi\bin\Debug\net9.0\System.Composition.Runtime.dll
 D:\CarAllowedApi\bin\Debug\net9.0\System.Composition.TypedParts.dll
+D:\CarAllowedApi\bin\Debug\net9.0\System.Net.ServerSentEvents.dll
 D:\CarAllowedApi\bin\Debug\net9.0\System.Net.WebSockets.WebSocketProtocol.dll
 D:\CarAllowedApi\bin\Debug\net9.0\System.Text.Json.dll
 D:\CarAllowedApi\bin\Debug\net9.0\cs\Microsoft.CodeAnalysis.resources.dll
@@ -118,6 +122,7 @@ D:\CarAllowedApi\obj\Debug\net9.0\CarAllowedApi.AssemblyInfo.cs
 D:\CarAllowedApi\obj\Debug\net9.0\CarAllowedApi.csproj.CoreCompileInputs.cache
 D:\CarAllowedApi\obj\Debug\net9.0\CarAllowedApi.MvcApplicationPartsAssemblyInfo.cs
 D:\CarAllowedApi\obj\Debug\net9.0\CarAllowedApi.MvcApplicationPartsAssemblyInfo.cache
+D:\CarAllowedApi\obj\Debug\net9.0\CarAllowedApi.sourcelink.json
 D:\CarAllowedApi\obj\Debug\net9.0\scopedcss\bundle\CarAllowedApi.styles.css
 D:\CarAllowedApi\obj\Debug\net9.0\staticwebassets.build.json
 D:\CarAllowedApi\obj\Debug\net9.0\staticwebassets.development.json
@@ -134,8 +139,3 @@ D:\CarAllowedApi\obj\Debug\net9.0\refint\CarAllowedApi.dll
 D:\CarAllowedApi\obj\Debug\net9.0\CarAllowedApi.pdb
 D:\CarAllowedApi\obj\Debug\net9.0\CarAllowedApi.genruntimeconfig.cache
 D:\CarAllowedApi\obj\Debug\net9.0\ref\CarAllowedApi.dll
-D:\CarAllowedApi\obj\Debug\net9.0\CarAllowedApi.sourcelink.json
-D:\CarAllowedApi\bin\Debug\net9.0\Microsoft.AspNetCore.Http.Connections.Client.dll
-D:\CarAllowedApi\bin\Debug\net9.0\Microsoft.AspNetCore.SignalR.Client.dll
-D:\CarAllowedApi\bin\Debug\net9.0\Microsoft.AspNetCore.SignalR.Client.Core.dll
-D:\CarAllowedApi\bin\Debug\net9.0\System.Net.ServerSentEvents.dll

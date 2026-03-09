@@ -117,6 +117,20 @@ namespace CarAllowedApi.Controllers
             }
         }
 
+        [HttpGet("GetAllListtoDay1/{name?}")]
+        public async Task<ActionResult<JobRequestCarAllDayDto[]>> GetAllListtoDay1JobRequestCars(string name = null, string pername = null)
+        {
+            try
+            {
+                var list = await _service.GetAllListtoDay1JobRequestCarsAsync(name, pername);
+                return Ok(list);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
         [HttpGet("{id}")]
         public async Task<ActionResult<JobRequestCar>> GetJobRequestCar(int id)
         {
