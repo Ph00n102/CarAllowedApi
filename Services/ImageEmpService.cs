@@ -44,7 +44,7 @@ namespace CarAllowedApi.Services
                 .FirstOrDefaultAsync(img => img.Id == id);
         }
 
-        public async Task<ImageEmp> SaveImageAsync(ImageEmpDto dto)
+       public async Task<ImageEmp> SaveImageAsync(ImageEmpDto dto)
         {
             if (dto.ImageFile == null || dto.ImageFile.Length == 0)
                 throw new InvalidOperationException("No image file was supplied.");
@@ -57,7 +57,11 @@ namespace CarAllowedApi.Services
             if (string.IsNullOrEmpty(dto.Tel))
                 throw new InvalidOperationException("Tel is required.");
             if (string.IsNullOrEmpty(dto.EmpStatusId))
-                throw new InvalidOperationException("Tel is required.");
+                throw new InvalidOperationException("EmpStatusId is required.");
+            
+            // เพิ่มการตรวจสอบ Empposition
+            if (string.IsNullOrEmpty(dto.Empposition))
+                throw new InvalidOperationException("Empposition is required.");
 
             byte[] bytes;
             await using (var ms = new MemoryStream())
@@ -72,6 +76,7 @@ namespace CarAllowedApi.Services
                 Nickname = dto.Nickname,
                 Tel = dto.Tel,
                 EmpStatusId = dto.EmpStatusId,
+                Empposition = dto.Empposition, // ← เพิ่มบรรทัดนี้
                 FileName = string.IsNullOrEmpty(dto.FileName)
                     ? dto.ImageFile.FileName
                     : dto.FileName,

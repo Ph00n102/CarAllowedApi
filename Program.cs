@@ -1,5 +1,6 @@
 using CarAllowedApi.Data;
 using CarAllowedApi.Hubs;
+using CarAllowedApi.Models1;
 using CarAllowedApi.Services;
 using HosxpUi.Services;
 using Microsoft.EntityFrameworkCore;
@@ -16,10 +17,14 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<ApplicationDbContext>(opt =>
          opt.UseMySql(builder.Configuration.GetConnectionString("DefaultConnection"), new MySqlServerVersion(new Version())));
 
+// Register your DbContext
+builder.Services.AddDbContext<DivisionsDbContext>(opt =>
+    opt.UseMySql(builder.Configuration.GetConnectionString("DefaultConnection1"), new MySqlServerVersion(new Version())));
+
 
 builder.Services.AddScoped<IJobRequestCarService, JobRequestCarService>();
 builder.Services.AddScoped<IImageEmpService, ImageEmpService>();
-// builder.Services.AddScoped<IJobNumberService, JobNumberService>();
+builder.Services.AddScoped<IDivisionsService, DivisionsService>();
 
 var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 

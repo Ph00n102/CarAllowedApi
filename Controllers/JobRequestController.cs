@@ -67,7 +67,7 @@ namespace CarAllowedApi.Controllers
         {
             try
             {
-                var list = await _service.GetAllEmpDayJobRequestCarsAsync(name,  statusId);
+                var list = await _service.GetAllEmpDayJobRequestCarsAsync(name, statusId);
                 return Ok(list);
             }
             catch (Exception ex)
@@ -75,7 +75,7 @@ namespace CarAllowedApi.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
-        
+
         [HttpGet("GetAllEmptoDay/{name?}")]
         public async Task<ActionResult<JobRequestCarAllDayDto[]>> GetAllEmpToDayJobRequestCars(string name = null)
         {
@@ -94,7 +94,20 @@ namespace CarAllowedApi.Controllers
         {
             try
             {
-                var list = await _service.GetAllListDayJobRequestCarsAsync(name,  statusId);
+                var list = await _service.GetAllListDayJobRequestCarsAsync(name, statusId);
+                return Ok(list);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+        [HttpGet("GetCOUNTListDay/{name?}")]
+        public async Task<ActionResult<JobRequestCarAllDayDto[]>> GetCOUNTListDayJobRequestCars(string name = null, int statusId = 0)
+        {
+            try
+            {
+                var list = await _service.GetCOUNTListDayJobRequestCarsAsync(name, statusId);
                 return Ok(list);
             }
             catch (Exception ex)
@@ -828,5 +841,19 @@ namespace CarAllowedApi.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
+        [HttpGet("GetAllByMonth/{year}/{month}")]
+        public async Task<ActionResult<JobRequestCarAllDayDto[]>> GetJobRequestCarsByMonth(int year, int month)
+        {
+            try
+            {
+                var list = await _service.GetJobRequestCarsByMonthAsync(year, month);
+                return Ok(list);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
     }
+        
 }

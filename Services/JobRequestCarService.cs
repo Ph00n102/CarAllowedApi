@@ -27,8 +27,10 @@ public interface IJobRequestCarService
     Task<JobRequestCar?> UpdateJobDistributeCarPartialAsync(int id, JobDistributeCarPartialDto dto);
     Task<JobRequestCar?> UpdateJobAcceptingAsync(int id, JobAcceptingDto dto);
     Task<JobRequestCarAllDayDto[]> GetAllListDayJobRequestCarsAsync(string name , int statusId);
+    Task<JobRequestCarAllDayDto[]> GetCOUNTListDayJobRequestCarsAsync(string name , int statusId);
     Task<JobRequestCarAllDayDto[]> GetAllListtoDayJobRequestCarsAsync(string name);
     Task<JobRequestCarAllDayDto[]> GetAllListtoDay1JobRequestCarsAsync(string name, string pername);
+    Task<JobRequestCarDto[]> GetJobRequestCarsByMonthAsync(int year, int month);
 
     // เปลี่ยน string เป็น int
     Task<IEnumerable<JobStatus>> GetAllJobStatusesAsync();
@@ -153,6 +155,8 @@ public class JobRequestCarService : IJobRequestCarService
                 ReturnDate = j.ReturnDate,
                 JobNumber = j.JobNumber,
                 ReturnTime = j.ReturnTime,
+                Location = j.Location,
+                LocationTime = j.LocationTime,
                 
                 JobStatus = j.JobStatus == null ? null : new JobStatus
                 {
@@ -460,7 +464,7 @@ public class JobRequestCarService : IJobRequestCarService
         // กรองตามชื่อ
         if (!string.IsNullOrEmpty(name))
         {
-            query = query.Where(j => EF.Functions.Like(j.Requester, $"%{name}%"));
+            query = query.Where(j => EF.Functions.Like(j.Requester, $"%{name}%") || EF.Functions.Like(j.PerApplicant, $"%{name}%"));
         }
         
         // กรองตามสถานะ
@@ -587,6 +591,156 @@ public class JobRequestCarService : IJobRequestCarService
                 ReturnDate = j.ReturnDate,
                 JobNumber = j.JobNumber,
                 ReturnTime = j.ReturnTime,
+                PerApplicant = j.PerApplicant,
+                
+                // ใช้ TryGetValue อย่างปลอดภัยกับ nullable types
+                JobStatus = statuses.ContainsKey(j.JobStatusId) ? statuses[j.JobStatusId] : null,
+                ImageEmp = j.ImageEmpId.HasValue && imageEmps.ContainsKey(j.ImageEmpId.Value) 
+                    ? imageEmps[j.ImageEmpId.Value] 
+                    : null,
+                Garage = j.GarageId.HasValue && garages.ContainsKey(j.GarageId.Value) 
+                    ? garages[j.GarageId.Value] 
+                    : null
+            })
+            .ToArray();
+    }
+   public async Task<JobRequestCarAllDayDto[]> GetCOUNTListDayJobRequestCarsAsync(string name = null, int statusId = 0)
+    {
+        var query = _context.JobRequestCars
+            .AsNoTracking()
+            .AsQueryable();
+
+        // กรองตามชื่อ
+        if (!string.IsNullOrEmpty(name))
+        {
+            query = query.Where(j => EF.Functions.Like(j.PerApplicant, $"%{name}%"));
+        }
+        
+        // กรองตามสถานะ
+        if (statusId > 0)
+        {
+            query = query.Where(j => j.JobStatusId == statusId);
+        }
+        
+        // ดึงเฉพาะ ID ที่ตรงเงื่อนไขก่อน
+        var jobIds = await query
+            .OrderBy(x => x.StartDate)
+            .Select(j => j.Id)
+            .ToArrayAsync();
+
+        if (!jobIds.Any())
+            return Array.Empty<JobRequestCarAllDayDto>();
+
+        // ดึงข้อมูลหลักทั้งหมด
+        var jobs = await _context.JobRequestCars
+            .AsNoTracking()
+            .Where(j => jobIds.Contains(j.Id))
+            .ToDictionaryAsync(j => j.Id);
+
+        // ดึง JobStatus
+        var statusIds = jobs.Values
+            .Select(j => j.JobStatusId)
+            .Distinct()
+            .ToList();
+        
+        var statuses = await _context.Set<JobStatus>()
+            .AsNoTracking()
+            .Where(s => statusIds.Contains(s.Id))
+            .Select(s => new JobStatus
+            {
+                Id = s.Id,
+                Status = s.Status,
+                Description = s.Description
+            })
+            .ToDictionaryAsync(s => s.Id);
+
+        // ดึง ImageEmp - แก้ไขส่วนนี้
+        var imageEmpIds = jobs.Values
+            .Select(j => j.ImageEmpId)  // j.ImageEmpId เป็น int?
+            .Where(id => id.HasValue)    // กรองเอาเฉพาะที่มีค่า
+            .Select(id => id.Value)      // แปลงจาก int? เป็น int
+            .Distinct()
+            .ToList();
+        
+        var imageEmps = new Dictionary<int, ImageEmp>();
+        if (imageEmpIds.Any())
+        {
+            imageEmps = await _context.Set<ImageEmp>()
+                .AsNoTracking()
+                .Where(i => imageEmpIds.Contains(i.Id))
+                .Select(i => new ImageEmp
+                {
+                    Id = i.Id,
+                    Name = i.Name,
+                    Nickname = i.Nickname,
+                    Empposition = i.Empposition,
+                    Tel = i.Tel
+                })
+                .ToDictionaryAsync(i => i.Id);
+        }
+
+        // ดึง Garage - แก้ไขส่วนนี้
+        var garageIds = jobs.Values
+            .Select(j => j.GarageId)     // j.GarageId เป็น int?
+            .Where(id => id.HasValue)     // กรองเอาเฉพาะที่มีค่า
+            .Select(id => id.Value)       // แปลงจาก int? เป็น int
+            .Distinct()
+            .ToList();
+        
+        var garages = new Dictionary<int, Garage>();
+        if (garageIds.Any())
+        {
+            garages = await _context.Set<Garage>()
+                .AsNoTracking()
+                .Where(g => garageIds.Contains(g.Id))
+                .Select(g => new Garage
+                {
+                    Id = g.Id,
+                    CarRegistration = g.CarRegistration,
+                    Carmodel = g.Carmodel,
+                    Cartype = g.Cartype,
+                    CarStatusId = g.CarStatusId,
+                    CarProvince = g.CarProvince
+                })
+                .ToDictionaryAsync(g => g.Id);
+        }
+
+        // รวมข้อมูลตามลำดับ ID ที่เรียงไว้
+        return jobIds
+            .Select(id => jobs.GetValueOrDefault(id))
+            .Where(j => j != null)
+            .Select(j => new JobRequestCarAllDayDto
+            {
+                Id = j.Id,
+                DateNow = j.DateNow,
+                TimeNow = j.TimeNow,
+                EDateNow = j.EDateNow,
+                ETimeNow = j.ETimeNow,
+                Requester = j.Requester,
+                DepartmentId = j.DepartmentId,
+                Origin = j.Origin,
+                Destination = j.Destination,
+                StartDate = j.StartDate,
+                StartTime = j.StartTime,
+                EndDate = j.EndDate,
+                EndTime = j.EndTime,
+                JobStatusId = j.JobStatusId,
+                ImageEmpId = j.ImageEmpId,
+                GarageId = j.GarageId,
+                NumPer = j.NumPer,
+                Tel = j.Tel,
+                Note = j.Note,
+                Ot = j.Ot,
+                MileageOut = j.MileageOut,
+                MileageBack = j.MileageBack,
+                NumOil = j.NumOil,
+                Price = j.Price,
+                IssueDate = j.IssueDate,
+                IssueTime = j.IssueTime,
+                ReturnDate = j.ReturnDate,
+                JobNumber = j.JobNumber,
+                ReturnTime = j.ReturnTime,
+                PerApplicant = j.PerApplicant,
                 
                 // ใช้ TryGetValue อย่างปลอดภัยกับ nullable types
                 JobStatus = statuses.ContainsKey(j.JobStatusId) ? statuses[j.JobStatusId] : null,
@@ -818,6 +972,8 @@ public class JobRequestCarService : IJobRequestCarService
                 j.ReturnDate,
                 j.JobNumber,
                 j.ReturnTime,
+                j.Location,
+                j.LocationTime,
                 
                 // JobStatus
                 JobStatus = j.JobStatus == null ? null : new 
@@ -894,6 +1050,8 @@ public class JobRequestCarService : IJobRequestCarService
             ReturnDate = j.ReturnDate,
             JobNumber = j.JobNumber,
             ReturnTime = j.ReturnTime,
+            Location = j.Location,
+            LocationTime = j.LocationTime,
             
             JobStatus = j.JobStatus == null ? null : new JobStatus
             {
@@ -1861,10 +2019,10 @@ public class JobRequestCarService : IJobRequestCarService
             // TimeOnly timeNow = ParseTime(dto.TimeNow);
             // DateOnly eDateNow = ParseDate(dto.EDateNow);
             // TimeOnly eTimeNow = ParseTime(dto.ETimeNow);
-            DateOnly startDate = ParseDate(dto.StartDate);
+            DateOnly startDate = ParseDateOnly(dto.StartDate);
             TimeOnly startTime = ParseTime(dto.StartTime);
             TimeOnly locationTime = ParseTime(dto.LocationTime);
-            DateOnly endDate = ParseDate(dto.EndDate);
+            DateOnly endDate = ParseDateOnly(dto.EndDate);
             TimeOnly endTime = ParseTime(dto.EndTime);
 
             // อัพเดทข้อมูลทั้งหมด
@@ -1938,6 +2096,47 @@ public class JobRequestCarService : IJobRequestCarService
         }
 
         throw new FormatException($"Cannot parse date: {dateString}. Expected formats: yyyy-MM-dd, dd/MM/yyyy, MM/dd/yyyy");
+    }
+    private DateOnly ParseDateOnly(string? dateString)
+    {
+        if (string.IsNullOrWhiteSpace(dateString))
+            throw new ArgumentException("Date string is null or empty");
+
+        // รูปแบบวันที่ที่รองรับ
+        string[] dateFormats = new[]
+        {
+            "yyyy-MM-dd",
+            "dd/MM/yyyy",
+            "MM/dd/yyyy",
+            "yyyy/MM/dd",
+            "dd-MM-yyyy"
+        };
+
+        DateOnly date;
+
+        // พยายาม parse ด้วยรูปแบบที่กำหนด
+        if (DateOnly.TryParseExact(dateString, dateFormats,
+            CultureInfo.InvariantCulture, DateTimeStyles.None, out date))
+        {
+            // ตรวจสอบปี: ถ้ามากกว่า 2400 ให้ถือว่าเป็น พ.ศ. -> แปลงเป็น ค.ศ.
+            if (date.Year > 2400)
+            {
+                date = new DateOnly(date.Year - 543, date.Month, date.Day);
+            }
+            return date;
+        }
+
+        // ถ้า parse ด้วยรูปแบบไม่สำเร็จ ลอง parse แบบทั่วไป
+        if (DateOnly.TryParse(dateString, out date))
+        {
+            if (date.Year > 2400)
+            {
+                date = new DateOnly(date.Year - 543, date.Month, date.Day);
+            }
+            return date;
+        }
+
+        throw new FormatException($"Cannot parse date: {dateString}. Expected formats: {string.Join(", ", dateFormats)}");
     }
 
     private TimeOnly ParseTime(string? timeString)
@@ -2298,133 +2497,133 @@ public class JobRequestCarService : IJobRequestCarService
         return true;
     }
     public async Task<JobRequestCar?> DistributeJobWithNumberAsync(int id, JobDistributeCarFullDto dto)
-{
-    try
     {
-        // ค้นหางานจากฐานข้อมูล
-        var jobRequest = await _context.JobRequestCars
-            .Include(j => j.JobStatus)
-            .Include(j => j.ImageEmp)
-            .Include(j => j.Garage)
-            .FirstOrDefaultAsync(j => j.Id == id);
-
-        if (jobRequest == null)
+        try
         {
-            throw new ArgumentException($"ไม่พบงานหมายเลข {id}");
-        }
+            // ค้นหางานจากฐานข้อมูล
+            var jobRequest = await _context.JobRequestCars
+                .Include(j => j.JobStatus)
+                .Include(j => j.ImageEmp)
+                .Include(j => j.Garage)
+                .FirstOrDefaultAsync(j => j.Id == id);
 
-        // ตรวจสอบสถานะ
-        if (jobRequest.JobStatusId == 4) // 4 = ยกเลิก
-        {
-            throw new InvalidOperationException("ไม่สามารถจ่ายงานที่ถูกยกเลิกได้");
-        }
-
-        // ตรวจสอบคนขับ
-        if (dto.ImageEmpId.HasValue && dto.ImageEmpId.Value > 0)
-        {
-            var driver = await _context.ImageEmps
-                .FirstOrDefaultAsync(e => e.Id == dto.ImageEmpId.Value);
-            
-            if (driver == null)
+            if (jobRequest == null)
             {
-                throw new ArgumentException($"ไม่พบคนขับหมายเลข {dto.ImageEmpId}");
+                throw new ArgumentException($"ไม่พบงานหมายเลข {id}");
             }
-        }
 
-        // ตรวจสอบรถ
-        if (dto.GarageId.HasValue && dto.GarageId.Value > 0)
-        {
-            var car = await _context.Garages
-                .FirstOrDefaultAsync(g => g.Id == dto.GarageId.Value);
-            
-            if (car == null)
+            // ตรวจสอบสถานะ
+            if (jobRequest.JobStatusId == 4) // 4 = ยกเลิก
             {
-                throw new ArgumentException($"ไม่พบรถหมายเลข {dto.GarageId}");
+                throw new InvalidOperationException("ไม่สามารถจ่ายงานที่ถูกยกเลิกได้");
             }
-        }
 
-        // สร้างเลขรันถ้ายังไม่มี
-        string jobNumber = dto.JobNumber;
-        if (string.IsNullOrEmpty(jobNumber))
-        {
-            // สร้างเลขรันใหม่
-            var prefix = DateTime.Now.ToString("yyMMdd");
-            
-            // ดึงตัวนับล่าสุด
-            var today = DateOnly.FromDateTime(DateTime.Now);
-            var latestJob = await _context.JobRequestCars
-                .Where(j => j.JDDate == today && !string.IsNullOrEmpty(j.JobNumber))
-                .OrderByDescending(j => j.JobNumber)
-                .FirstOrDefaultAsync();
-            
-            int nextCounter = 1;
-            if (latestJob != null && !string.IsNullOrEmpty(latestJob.JobNumber))
+            // ตรวจสอบคนขับ
+            if (dto.ImageEmpId.HasValue && dto.ImageEmpId.Value > 0)
             {
-                var numberPart = latestJob.JobNumber.Substring(Math.Max(0, latestJob.JobNumber.Length - 6));
-                if (int.TryParse(numberPart, out int lastCounter))
+                var driver = await _context.ImageEmps
+                    .FirstOrDefaultAsync(e => e.Id == dto.ImageEmpId.Value);
+                
+                if (driver == null)
                 {
-                    nextCounter = lastCounter + 1;
+                    throw new ArgumentException($"ไม่พบคนขับหมายเลข {dto.ImageEmpId}");
                 }
             }
+
+            // ตรวจสอบรถ
+            if (dto.GarageId.HasValue && dto.GarageId.Value > 0)
+            {
+                var car = await _context.Garages
+                    .FirstOrDefaultAsync(g => g.Id == dto.GarageId.Value);
+                
+                if (car == null)
+                {
+                    throw new ArgumentException($"ไม่พบรถหมายเลข {dto.GarageId}");
+                }
+            }
+
+            // สร้างเลขรันถ้ายังไม่มี
+            string jobNumber = dto.JobNumber;
+            if (string.IsNullOrEmpty(jobNumber))
+            {
+                // สร้างเลขรันใหม่
+                var prefix = DateTime.Now.ToString("yyMMdd");
+                
+                // ดึงตัวนับล่าสุด
+                var today = DateOnly.FromDateTime(DateTime.Now);
+                var latestJob = await _context.JobRequestCars
+                    .Where(j => j.JDDate == today && !string.IsNullOrEmpty(j.JobNumber))
+                    .OrderByDescending(j => j.JobNumber)
+                    .FirstOrDefaultAsync();
+                
+                int nextCounter = 1;
+                if (latestJob != null && !string.IsNullOrEmpty(latestJob.JobNumber))
+                {
+                    var numberPart = latestJob.JobNumber.Substring(Math.Max(0, latestJob.JobNumber.Length - 6));
+                    if (int.TryParse(numberPart, out int lastCounter))
+                    {
+                        nextCounter = lastCounter + 1;
+                    }
+                }
+                
+                jobNumber = $"{prefix}{nextCounter.ToString("D6")}";
+            }
+
+            // อัพเดทข้อมูล
+            jobRequest.ImageEmpId = dto.ImageEmpId;
+            jobRequest.GarageId = dto.GarageId;
+            jobRequest.JDDate = dto.JDDate ?? DateOnly.FromDateTime(DateTime.Now);
+            jobRequest.JDTime = dto.JDTime ?? TimeOnly.FromDateTime(DateTime.Now);
+            jobRequest.JobStatusId = dto.JobStatusId;
+            jobRequest.JobNumber = jobNumber;
+            jobRequest.StatusDate = DateOnly.FromDateTime(DateTime.Now);
+            jobRequest.StatusTime = TimeOnly.FromDateTime(DateTime.Now);
+
+            await _context.SaveChangesAsync();
+
+            // โหลดข้อมูลที่เกี่ยวข้อง
+            await _context.Entry(jobRequest)
+                .Reference(j => j.JobStatus)
+                .LoadAsync();
+            await _context.Entry(jobRequest)
+                .Reference(j => j.ImageEmp)
+                .LoadAsync();
+            await _context.Entry(jobRequest)
+                .Reference(j => j.Garage)
+                .LoadAsync();
+
+            Console.WriteLine($"✅ จ่ายงานสำเร็จ: #{jobNumber} สำหรับงาน {id}");
             
-            jobNumber = $"{prefix}{nextCounter.ToString("D6")}";
+            return jobRequest;
         }
-
-        // อัพเดทข้อมูล
-        jobRequest.ImageEmpId = dto.ImageEmpId;
-        jobRequest.GarageId = dto.GarageId;
-        jobRequest.JDDate = dto.JDDate ?? DateOnly.FromDateTime(DateTime.Now);
-        jobRequest.JDTime = dto.JDTime ?? TimeOnly.FromDateTime(DateTime.Now);
-        jobRequest.JobStatusId = dto.JobStatusId;
-        jobRequest.JobNumber = jobNumber;
-        jobRequest.StatusDate = DateOnly.FromDateTime(DateTime.Now);
-        jobRequest.StatusTime = TimeOnly.FromDateTime(DateTime.Now);
-
-        await _context.SaveChangesAsync();
-
-        // โหลดข้อมูลที่เกี่ยวข้อง
-        await _context.Entry(jobRequest)
-            .Reference(j => j.JobStatus)
-            .LoadAsync();
-        await _context.Entry(jobRequest)
-            .Reference(j => j.ImageEmp)
-            .LoadAsync();
-        await _context.Entry(jobRequest)
-            .Reference(j => j.Garage)
-            .LoadAsync();
-
-        Console.WriteLine($"✅ จ่ายงานสำเร็จ: #{jobNumber} สำหรับงาน {id}");
-        
-        return jobRequest;
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Error distributing job: {ex.Message}");
+            throw;
+        }
     }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"❌ Error distributing job: {ex.Message}");
-        throw;
-    }
-}
 
-public async Task<JobRequestCar?> UpdateJobNumberAsync(int id, string jobNumber)
-{
-    try
+    public async Task<JobRequestCar?> UpdateJobNumberAsync(int id, string jobNumber)
     {
-        var jobRequest = await _context.JobRequestCars
-            .FirstOrDefaultAsync(j => j.Id == id);
+        try
+        {
+            var jobRequest = await _context.JobRequestCars
+                .FirstOrDefaultAsync(j => j.Id == id);
 
-        if (jobRequest == null)
+            if (jobRequest == null)
+                return null;
+
+            jobRequest.JobNumber = jobNumber;
+            await _context.SaveChangesAsync();
+
+            return jobRequest;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating job number: {ex.Message}");
             return null;
-
-        jobRequest.JobNumber = jobNumber;
-        await _context.SaveChangesAsync();
-
-        return jobRequest;
+        }
     }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Error updating job number: {ex.Message}");
-        return null;
-    }
-}
 
     public async Task<JobNumberResultDto> GetJobNumberInfoForJobAsync(int jobId)
     {
@@ -2465,7 +2664,70 @@ public async Task<JobRequestCar?> UpdateJobNumberAsync(int id, string jobNumber)
         }
     }
 
-    
+    public async Task<JobRequestCarDto[]> GetJobRequestCarsByMonthAsync(int year, int month)
+    {
+        if (year > 2500)
+        {
+            year -= 543;
+        }
+
+        if (month < 1 || month > 12)
+        {
+            throw new ArgumentOutOfRangeException(nameof(month), "Month must be between 1 and 12.");
+        }
+
+        var startDate = new DateOnly(year, month, 1);
+        var endDate = startDate.AddMonths(1);
+
+        var jobRequests = await _context.JobRequestCars
+            .AsNoTracking()
+            .Include(j => j.JobStatus)
+            .Include(j => j.ImageEmp)
+            .Include(j => j.Garage)
+            .Where(j => j.StartDate >= startDate && j.StartDate < endDate)
+            .OrderBy(j => j.StartDate)
+            .ThenBy(j => j.StartTime)
+            .Select(j => new JobRequestCarDto
+            {
+                DateNow = j.DateNow.ToString("yyyy-MM-dd"),
+                TimeNow = j.TimeNow.ToString(@"HH\:mm\:ss"),
+                EDateNow = j.EDateNow.ToString("yyyy-MM-dd"),
+                ETimeNow = j.ETimeNow.ToString(@"HH\:mm\:ss"),
+
+                Requester = j.Requester,
+                DepartmentId = j.DepartmentId,
+                Position = j.ImageEmp != null ? j.ImageEmp.Empposition : null,
+
+                District = null,
+                Province = null,
+
+                Origin = j.Origin,
+                Destination = j.Destination,
+                AlongWith = null,
+                For = null,
+
+                Location = j.Location,
+                LocationTime = j.LocationTime.ToString(@"HH\:mm\:ss"),
+
+                StartDate = j.StartDate.ToString("yyyy-MM-dd"),
+                StartTime = j.StartTime.ToString(@"HH\:mm\:ss"),
+                EndDate = j.EndDate.ToString("yyyy-MM-dd"),
+                EndTime = j.EndTime.ToString(@"HH\:mm\:ss"),
+
+                JobStatusId = j.JobStatusId,
+                ImageEmpId = j.ImageEmpId,
+                GarageId = j.GarageId,
+                NumPer = j.NumPer,
+                Tel = j.Tel,
+                Note = j.Note,
+                ImageFiles = null,
+                PerApplicant = null,
+                PerPosition = null
+            })
+            .ToArrayAsync();
+
+        return jobRequests;
+    }
 }
     //  public async Task<JobRequestCar> CreateJobRequestCarAsync(JobRequestCarDto dto)
     // {

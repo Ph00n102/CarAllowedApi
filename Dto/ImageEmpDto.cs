@@ -10,4 +10,5 @@ namespace CarAllowedApi.Dto;
         public string FileName { get; set; }
         public string EmpStatusId { get; set; }
         public IFormFile ImageFile { get; set; } 
+        
     }
