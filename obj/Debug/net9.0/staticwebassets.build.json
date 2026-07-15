@@ -1,12 +1,1 @@
-{
-  "Version": 1,
-  "Hash": "GxgkPWgqvhqg+gu6KLUOlf1/eNPkOsjQ91anZtXm0ho=",
-  "Source": "CarAllowedApi",
-  "BasePath": "_content/CarAllowedApi",
-  "Mode": "Default",
-  "ManifestType": "Build",
-  "ReferencedProjectsConfiguration": [],
-  "DiscoveryPatterns": [],
-  "Assets": [],
-  "Endpoints": []
-}
+{"Version":1,"Hash":"SElg1x9Drcf7giH6QVMrA+BWP/Q0iTWrD97HqH86sRU=","Source":"CarAllowedApi","BasePath":"/","Mode":"Root","ManifestType":"Build","ReferencedProjectsConfiguration":[],"DiscoveryPatterns":[],"Assets":[],"Endpoints":[]}

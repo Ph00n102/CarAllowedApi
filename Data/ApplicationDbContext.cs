@@ -16,4 +16,5 @@ public class ApplicationDbContext : DbContext
     public DbSet<ImageEmp> ImageEmps { get; set; }
     public DbSet<Garage> Garages { get; set; }
     public DbSet<ImageFile> ImageFiles { get; set; }
+    public DbSet<PublicHoliday> PublicHolidays { get; set; }
 }

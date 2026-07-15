@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="..\build\CarAllowedApi.props" />
-</Project>

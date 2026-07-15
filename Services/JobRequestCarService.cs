@@ -27,7 +27,10 @@ public interface IJobRequestCarService
     Task<JobRequestCar?> UpdateJobDistributeCarPartialAsync(int id, JobDistributeCarPartialDto dto);
     Task<JobRequestCar?> UpdateJobAcceptingAsync(int id, JobAcceptingDto dto);
     Task<JobRequestCarAllDayDto[]> GetAllListDayJobRequestCarsAsync(string name , int statusId);
+    // Interface
+    Task<JobRequestCarAllDayDto[]> GetAllListByDateJobRequestCarsAsync(DateTime? startDate = null);
     Task<JobRequestCarAllDayDto[]> GetCOUNTListDayJobRequestCarsAsync(string name , int statusId);
+    Task<JobRequestCarAllDayDto[]> GetEmpCOUNTListDayJobRequestCarsAsync(string name , int statusId);
     Task<JobRequestCarAllDayDto[]> GetAllListtoDayJobRequestCarsAsync(string name);
     Task<JobRequestCarAllDayDto[]> GetAllListtoDay1JobRequestCarsAsync(string name, string pername);
     Task<JobRequestCarDto[]> GetJobRequestCarsByMonthAsync(int year, int month);
@@ -604,6 +607,163 @@ public class JobRequestCarService : IJobRequestCarService
             })
             .ToArray();
     }
+   public async Task<JobRequestCarAllDayDto[]> GetAllListByDateJobRequestCarsAsync(DateTime? startDate = null)
+    {
+        var query = _context.JobRequestCars
+            .AsNoTracking()
+            .AsQueryable();
+
+        // เพิ่มเงื่อนไข filter ตาม StartDate
+        if (startDate.HasValue)
+        {
+            var targetDate = DateOnly.FromDateTime(startDate.Value.Date);
+            query = query.Where(x => x.StartDate == targetDate);
+        }
+
+
+        // // กรองตามชื่อ
+        // if (!string.IsNullOrEmpty(name))
+        // {
+        //     query = query.Where(j => EF.Functions.Like(j.Requester, $"%{name}%") || EF.Functions.Like(j.PerApplicant, $"%{name}%"));
+        // }
+        
+        // // กรองตามสถานะ
+        // if (statusId > 0)
+        // {
+        //     query = query.Where(j => j.JobStatusId == statusId);
+        // }
+        
+        // ดึงเฉพาะ ID ที่ตรงเงื่อนไขก่อน
+        var jobIds = await query
+            .OrderBy(x => x.StartDate)
+            .Select(j => j.Id)
+            .ToArrayAsync();
+
+        if (!jobIds.Any())
+            return Array.Empty<JobRequestCarAllDayDto>();
+
+        // ดึงข้อมูลหลักทั้งหมด
+        var jobs = await _context.JobRequestCars
+            .AsNoTracking()
+            .Where(j => jobIds.Contains(j.Id))
+            .ToDictionaryAsync(j => j.Id);
+
+        // ดึง JobStatus
+        var statusIds = jobs.Values
+            .Select(j => j.JobStatusId)
+            .Distinct()
+            .ToList();
+        
+        var statuses = await _context.Set<JobStatus>()
+            .AsNoTracking()
+            .Where(s => statusIds.Contains(s.Id))
+            .Select(s => new JobStatus
+            {
+                Id = s.Id,
+                Status = s.Status,
+                Description = s.Description
+            })
+            .ToDictionaryAsync(s => s.Id);
+
+        // ดึง ImageEmp - แก้ไขส่วนนี้
+        var imageEmpIds = jobs.Values
+            .Select(j => j.ImageEmpId)  // j.ImageEmpId เป็น int?
+            .Where(id => id.HasValue)    // กรองเอาเฉพาะที่มีค่า
+            .Select(id => id.Value)      // แปลงจาก int? เป็น int
+            .Distinct()
+            .ToList();
+        
+        var imageEmps = new Dictionary<int, ImageEmp>();
+        if (imageEmpIds.Any())
+        {
+            imageEmps = await _context.Set<ImageEmp>()
+                .AsNoTracking()
+                .Where(i => imageEmpIds.Contains(i.Id))
+                .Select(i => new ImageEmp
+                {
+                    Id = i.Id,
+                    Name = i.Name,
+                    Nickname = i.Nickname,
+                    Empposition = i.Empposition,
+                    Tel = i.Tel
+                })
+                .ToDictionaryAsync(i => i.Id);
+        }
+
+        // ดึง Garage - แก้ไขส่วนนี้
+        var garageIds = jobs.Values
+            .Select(j => j.GarageId)     // j.GarageId เป็น int?
+            .Where(id => id.HasValue)     // กรองเอาเฉพาะที่มีค่า
+            .Select(id => id.Value)       // แปลงจาก int? เป็น int
+            .Distinct()
+            .ToList();
+        
+        var garages = new Dictionary<int, Garage>();
+        if (garageIds.Any())
+        {
+            garages = await _context.Set<Garage>()
+                .AsNoTracking()
+                .Where(g => garageIds.Contains(g.Id))
+                .Select(g => new Garage
+                {
+                    Id = g.Id,
+                    CarRegistration = g.CarRegistration,
+                    Carmodel = g.Carmodel,
+                    Cartype = g.Cartype,
+                    CarStatusId = g.CarStatusId,
+                    CarProvince = g.CarProvince
+                })
+                .ToDictionaryAsync(g => g.Id);
+        }
+
+        // รวมข้อมูลตามลำดับ ID ที่เรียงไว้
+        return jobIds
+            .Select(id => jobs.GetValueOrDefault(id))
+            .Where(j => j != null)
+            .Select(j => new JobRequestCarAllDayDto
+            {
+                Id = j.Id,
+                DateNow = j.DateNow,
+                TimeNow = j.TimeNow,
+                EDateNow = j.EDateNow,
+                ETimeNow = j.ETimeNow,
+                Requester = j.Requester,
+                DepartmentId = j.DepartmentId,
+                Origin = j.Origin,
+                Destination = j.Destination,
+                StartDate = j.StartDate,
+                StartTime = j.StartTime,
+                EndDate = j.EndDate,
+                EndTime = j.EndTime,
+                JobStatusId = j.JobStatusId,
+                ImageEmpId = j.ImageEmpId,
+                GarageId = j.GarageId,
+                NumPer = j.NumPer,
+                Tel = j.Tel,
+                Note = j.Note,
+                Ot = j.Ot,
+                MileageOut = j.MileageOut,
+                MileageBack = j.MileageBack,
+                NumOil = j.NumOil,
+                Price = j.Price,
+                IssueDate = j.IssueDate,
+                IssueTime = j.IssueTime,
+                ReturnDate = j.ReturnDate,
+                JobNumber = j.JobNumber,
+                ReturnTime = j.ReturnTime,
+                PerApplicant = j.PerApplicant,
+                
+                // ใช้ TryGetValue อย่างปลอดภัยกับ nullable types
+                JobStatus = statuses.ContainsKey(j.JobStatusId) ? statuses[j.JobStatusId] : null,
+                ImageEmp = j.ImageEmpId.HasValue && imageEmps.ContainsKey(j.ImageEmpId.Value) 
+                    ? imageEmps[j.ImageEmpId.Value] 
+                    : null,
+                Garage = j.GarageId.HasValue && garages.ContainsKey(j.GarageId.Value) 
+                    ? garages[j.GarageId.Value] 
+                    : null
+            })
+            .ToArray();
+    }
    public async Task<JobRequestCarAllDayDto[]> GetCOUNTListDayJobRequestCarsAsync(string name = null, int statusId = 0)
     {
         var query = _context.JobRequestCars
@@ -743,6 +903,155 @@ public class JobRequestCarService : IJobRequestCarService
                 PerApplicant = j.PerApplicant,
                 
                 // ใช้ TryGetValue อย่างปลอดภัยกับ nullable types
+                JobStatus = statuses.ContainsKey(j.JobStatusId) ? statuses[j.JobStatusId] : null,
+                ImageEmp = j.ImageEmpId.HasValue && imageEmps.ContainsKey(j.ImageEmpId.Value) 
+                    ? imageEmps[j.ImageEmpId.Value] 
+                    : null,
+                Garage = j.GarageId.HasValue && garages.ContainsKey(j.GarageId.Value) 
+                    ? garages[j.GarageId.Value] 
+                    : null
+            })
+            .ToArray();
+    }
+   public async Task<JobRequestCarAllDayDto[]> GetEmpCOUNTListDayJobRequestCarsAsync(string name = null, int statusId = 0)
+    {
+        var query = _context.JobRequestCars
+            .AsNoTracking()
+            .AsQueryable();
+
+        // กรองตามชื่อ (เปลี่ยนไปใช้ ImageEmp.Name แทน PerApplicant)
+        if (!string.IsNullOrEmpty(name))
+        {
+            query = query.Where(j => _context.ImageEmps
+                .Any(i => i.Id == j.ImageEmpId && EF.Functions.Like(i.Name, $"%{name}%")));
+        }
+        
+        // กรองตามสถานะ
+        if (statusId > 0)
+        {
+            query = query.Where(j => j.JobStatusId == statusId);
+        }
+        
+        // ดึงเฉพาะ ID ที่ตรงเงื่อนไขก่อน
+        var jobIds = await query
+            .OrderBy(x => x.StartDate)
+            .Select(j => j.Id)
+            .ToArrayAsync();
+
+        if (!jobIds.Any())
+            return Array.Empty<JobRequestCarAllDayDto>();
+
+        // ดึงข้อมูลหลักทั้งหมด
+        var jobs = await _context.JobRequestCars
+            .AsNoTracking()
+            .Where(j => jobIds.Contains(j.Id))
+            .ToDictionaryAsync(j => j.Id);
+
+        // ดึง JobStatus
+        var statusIds = jobs.Values
+            .Select(j => j.JobStatusId)
+            .Distinct()
+            .ToList();
+        
+        var statuses = await _context.Set<JobStatus>()
+            .AsNoTracking()
+            .Where(s => statusIds.Contains(s.Id))
+            .Select(s => new JobStatus
+            {
+                Id = s.Id,
+                Status = s.Status,
+                Description = s.Description
+            })
+            .ToDictionaryAsync(s => s.Id);
+
+        // ดึง ImageEmp
+        var imageEmpIds = jobs.Values
+            .Select(j => j.ImageEmpId)
+            .Where(id => id.HasValue)
+            .Select(id => id.Value)
+            .Distinct()
+            .ToList();
+        
+        var imageEmps = new Dictionary<int, ImageEmp>();
+        if (imageEmpIds.Any())
+        {
+            imageEmps = await _context.Set<ImageEmp>()
+                .AsNoTracking()
+                .Where(i => imageEmpIds.Contains(i.Id))
+                .Select(i => new ImageEmp
+                {
+                    Id = i.Id,
+                    Name = i.Name,
+                    Nickname = i.Nickname,
+                    Empposition = i.Empposition,
+                    Tel = i.Tel
+                })
+                .ToDictionaryAsync(i => i.Id);
+        }
+
+        // ดึง Garage
+        var garageIds = jobs.Values
+            .Select(j => j.GarageId)
+            .Where(id => id.HasValue)
+            .Select(id => id.Value)
+            .Distinct()
+            .ToList();
+        
+        var garages = new Dictionary<int, Garage>();
+        if (garageIds.Any())
+        {
+            garages = await _context.Set<Garage>()
+                .AsNoTracking()
+                .Where(g => garageIds.Contains(g.Id))
+                .Select(g => new Garage
+                {
+                    Id = g.Id,
+                    CarRegistration = g.CarRegistration,
+                    Carmodel = g.Carmodel,
+                    Cartype = g.Cartype,
+                    CarStatusId = g.CarStatusId,
+                    CarProvince = g.CarProvince
+                })
+                .ToDictionaryAsync(g => g.Id);
+        }
+
+        // รวมข้อมูลตามลำดับ ID ที่เรียงไว้
+        return jobIds
+            .Select(id => jobs.GetValueOrDefault(id))
+            .Where(j => j != null)
+            .Select(j => new JobRequestCarAllDayDto
+            {
+                Id = j.Id,
+                DateNow = j.DateNow,
+                TimeNow = j.TimeNow,
+                EDateNow = j.EDateNow,
+                ETimeNow = j.ETimeNow,
+                Requester = j.Requester,
+                DepartmentId = j.DepartmentId,
+                Origin = j.Origin,
+                Destination = j.Destination,
+                StartDate = j.StartDate,
+                StartTime = j.StartTime,
+                EndDate = j.EndDate,
+                EndTime = j.EndTime,
+                JobStatusId = j.JobStatusId,
+                ImageEmpId = j.ImageEmpId,
+                GarageId = j.GarageId,
+                NumPer = j.NumPer,
+                Tel = j.Tel,
+                Note = j.Note,
+                Ot = j.Ot,
+                MileageOut = j.MileageOut,
+                MileageBack = j.MileageBack,
+                NumOil = j.NumOil,
+                Price = j.Price,
+                IssueDate = j.IssueDate,
+                IssueTime = j.IssueTime,
+                ReturnDate = j.ReturnDate,
+                JobNumber = j.JobNumber,
+                ReturnTime = j.ReturnTime,
+                PerApplicant = j.PerApplicant, // เก็บค่าเดิมไว้
+                
                 JobStatus = statuses.ContainsKey(j.JobStatusId) ? statuses[j.JobStatusId] : null,
                 ImageEmp = j.ImageEmpId.HasValue && imageEmps.ContainsKey(j.ImageEmpId.Value) 
                     ? imageEmps[j.ImageEmpId.Value] 
@@ -933,16 +1242,172 @@ public class JobRequestCarService : IJobRequestCarService
     //         .AsNoTracking()
     //         .ToArrayAsync();
     // }
+    // public async Task<IEnumerable<JobRequestCarAllDayDto>> GetJobRequestCarsByStatusAsync(int statusId)
+    // {
+    //     // ดึงเฉพาะ ID และข้อมูลหลักก่อน
+    //     var jobCars = await _context.JobRequestCars
+    //         .AsNoTracking()
+    //         .Where(j => j.JobStatusId == statusId)
+    //         .OrderBy(j => j.StartDate)
+    //         .Select(j => new
+    //         {
+    //             // ฟิลด์หลัก
+    //             j.Id,
+    //             j.DateNow,
+    //             j.TimeNow,
+    //             j.EDateNow,
+    //             j.ETimeNow,
+    //             j.Requester,
+    //             j.DepartmentId,
+    //             j.Origin,
+    //             j.Destination,
+    //             j.StartDate,
+    //             j.StartTime,
+    //             j.EndDate,
+    //             j.EndTime,
+    //             j.JobStatusId,
+    //             j.ImageEmpId,
+    //             j.GarageId,
+    //             j.NumPer,
+    //             j.Tel,
+    //             j.Note,
+    //             j.Ot,
+    //             j.MileageOut,
+    //             j.MileageBack,
+    //             j.NumOil,
+    //             j.Price,
+    //             j.IssueDate,
+    //             j.IssueTime,
+    //             j.ReturnDate,
+    //             j.JobNumber,
+    //             j.ReturnTime,
+    //             j.Location,
+    //             j.LocationTime,
+                
+    //             // JobStatus
+    //             JobStatus = j.JobStatus == null ? null : new 
+    //             {
+    //                 j.JobStatus.Id,
+    //                 j.JobStatus.Status,
+    //                 j.JobStatus.Description
+    //             },
+                
+    //             // ImageEmp
+    //             ImageEmp = j.ImageEmp == null ? null : new 
+    //             {
+    //                 j.ImageEmp.Id,
+    //                 j.ImageEmp.Name,
+    //                 j.ImageEmp.Nickname,
+    //                 j.ImageEmp.Empposition,
+    //                 j.ImageEmp.Tel
+    //             },
+                
+    //             // Garage
+    //             Garage = j.Garage == null ? null : new 
+    //             {
+    //                 j.Garage.Id,
+    //                 j.Garage.CarRegistration,
+    //                 j.Garage.Carmodel,
+    //                 j.Garage.Cartype,
+    //                 j.Garage.CarStatusId,
+    //                 j.Garage.CarProvince
+    //             },
+                
+    //             // ImageFiles - ดึงข้อมูลทั้งหมดเลย (แก้ไขตรงนี้)
+    //             ImageFiles = j.ImageFiles.Select(f => new 
+    //             {
+    //                 f.Id,
+    //                 // f.JobRequestCarId,
+    //                 f.FileName,
+    //                 ImageData = f.ImageFile  // เปลี่ยนชื่อเป็น ImageData
+    //             }).ToList()
+    //         })
+    //         .ToArrayAsync();
+
+    //     if (!jobCars.Any())
+    //         return Enumerable.Empty<JobRequestCarAllDayDto>();
+
+    //     // Map to DTO โดยไม่ต้อง query แยก
+    //     return jobCars.Select(j => new JobRequestCarAllDayDto
+    //     {
+    //         Id = j.Id,
+    //         DateNow = j.DateNow,
+    //         TimeNow = j.TimeNow,
+    //         EDateNow = j.EDateNow,
+    //         ETimeNow = j.ETimeNow,
+    //         Requester = j.Requester,
+    //         DepartmentId = j.DepartmentId,
+    //         Origin = j.Origin,
+    //         Destination = j.Destination,
+    //         StartDate = j.StartDate,
+    //         StartTime = j.StartTime,
+    //         EndDate = j.EndDate,
+    //         EndTime = j.EndTime,
+    //         JobStatusId = j.JobStatusId,
+    //         ImageEmpId = j.ImageEmpId,
+    //         GarageId = j.GarageId,
+    //         NumPer = j.NumPer,
+    //         Tel = j.Tel,
+    //         Note = j.Note,
+    //         Ot = j.Ot,
+    //         MileageOut = j.MileageOut,
+    //         MileageBack = j.MileageBack,
+    //         NumOil = j.NumOil,
+    //         Price = j.Price,
+    //         IssueDate = j.IssueDate,
+    //         IssueTime = j.IssueTime,
+    //         ReturnDate = j.ReturnDate,
+    //         JobNumber = j.JobNumber,
+    //         ReturnTime = j.ReturnTime,
+    //         Location = j.Location,
+    //         LocationTime = j.LocationTime,
+            
+    //         JobStatus = j.JobStatus == null ? null : new JobStatus
+    //         {
+    //             Id = j.JobStatus.Id,
+    //             Status = j.JobStatus.Status,
+    //             Description = j.JobStatus.Description
+    //         },
+            
+    //         ImageEmp = j.ImageEmp == null ? null : new ImageEmp
+    //         {
+    //             Id = j.ImageEmp.Id,
+    //             Name = j.ImageEmp.Name,
+    //             Nickname = j.ImageEmp.Nickname,
+    //             Empposition = j.ImageEmp.Empposition,
+    //             Tel = j.ImageEmp.Tel
+    //         },
+            
+    //         Garage = j.Garage == null ? null : new Garage
+    //         {
+    //             Id = j.Garage.Id,
+    //             CarRegistration = j.Garage.CarRegistration,
+    //             Carmodel = j.Garage.Carmodel,
+    //             Cartype = j.Garage.Cartype,
+    //             CarStatusId = j.Garage.CarStatusId,
+    //             CarProvince = j.Garage.CarProvince
+    //         },
+            
+    //         // Map ImageFiles โดยตรง
+    //         ImageFiles = j.ImageFiles?.Select(f => new ImageFileDto
+    //         {
+    //             Id = f.Id,
+    //             // JobRequestCarId = f.JobRequestCarId,
+    //             FileName = f.FileName,
+    //             ImageFile = f.ImageData  // ใช้ ImageData ที่ rename แล้ว
+    //         }).ToArray() ?? Array.Empty<ImageFileDto>()
+    //     }).ToArray();
+    // }
     public async Task<IEnumerable<JobRequestCarAllDayDto>> GetJobRequestCarsByStatusAsync(int statusId)
     {
-        // ดึงเฉพาะ ID และข้อมูลหลักก่อน
+        // ดึงข้อมูลหลักโดยไม่รวม ImageFiles
         var jobCars = await _context.JobRequestCars
             .AsNoTracking()
             .Where(j => j.JobStatusId == statusId)
-            .OrderBy(j => j.StartDate)
+            .OrderByDescending(j => j.StartDate)  // เปลี่ยนจาก OrderBy เป็น OrderByDescending
             .Select(j => new
             {
-                // ฟิลด์หลัก
+                // ฟิลด์หลักทั้งหมด (คงเดิม)
                 j.Id,
                 j.DateNow,
                 j.TimeNow,
@@ -975,7 +1440,6 @@ public class JobRequestCarService : IJobRequestCarService
                 j.Location,
                 j.LocationTime,
                 
-                // JobStatus
                 JobStatus = j.JobStatus == null ? null : new 
                 {
                     j.JobStatus.Id,
@@ -983,7 +1447,6 @@ public class JobRequestCarService : IJobRequestCarService
                     j.JobStatus.Description
                 },
                 
-                // ImageEmp
                 ImageEmp = j.ImageEmp == null ? null : new 
                 {
                     j.ImageEmp.Id,
@@ -993,7 +1456,6 @@ public class JobRequestCarService : IJobRequestCarService
                     j.ImageEmp.Tel
                 },
                 
-                // Garage
                 Garage = j.Garage == null ? null : new 
                 {
                     j.Garage.Id,
@@ -1002,25 +1464,35 @@ public class JobRequestCarService : IJobRequestCarService
                     j.Garage.Cartype,
                     j.Garage.CarStatusId,
                     j.Garage.CarProvince
-                },
-                
-                // ImageFiles - ดึงข้อมูลทั้งหมดเลย (แก้ไขตรงนี้)
-                ImageFiles = j.ImageFiles.Select(f => new 
-                {
-                    f.Id,
-                    // f.JobRequestCarId,
-                    f.FileName,
-                    ImageData = f.ImageFile  // เปลี่ยนชื่อเป็น ImageData
-                }).ToList()
+                }
             })
             .ToArrayAsync();
 
+        // ส่วนที่เหลือคงเดิม...
         if (!jobCars.Any())
             return Enumerable.Empty<JobRequestCarAllDayDto>();
 
-        // Map to DTO โดยไม่ต้อง query แยก
+        var jobIds = jobCars.Select(j => j.Id).ToList();
+        
+        var imageFiles = await _context.ImageFiles
+            .AsNoTracking()
+            .Where(f => jobIds.Contains(f.JobRequestCarId))
+            .Select(f => new 
+            {
+                f.Id,
+                f.JobRequestCarId,
+                f.FileName,
+                ImageData = f.FileData
+            })
+            .ToArrayAsync();
+
+        var imageFilesGrouped = imageFiles
+            .GroupBy(f => f.JobRequestCarId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
         return jobCars.Select(j => new JobRequestCarAllDayDto
         {
+            // DTO mapping (คงเดิม)
             Id = j.Id,
             DateNow = j.DateNow,
             TimeNow = j.TimeNow,
@@ -1079,14 +1551,14 @@ public class JobRequestCarService : IJobRequestCarService
                 CarProvince = j.Garage.CarProvince
             },
             
-            // Map ImageFiles โดยตรง
-            ImageFiles = j.ImageFiles?.Select(f => new ImageFileDto
-            {
-                Id = f.Id,
-                // JobRequestCarId = f.JobRequestCarId,
-                FileName = f.FileName,
-                ImageFile = f.ImageData  // ใช้ ImageData ที่ rename แล้ว
-            }).ToArray() ?? Array.Empty<ImageFileDto>()
+            ImageFiles = imageFilesGrouped.TryGetValue(j.Id, out var files) 
+                ? files.Select(f => new ImageFileDto
+                {
+                    Id = f.Id,
+                    FileName = f.FileName,
+                    ImageFile = f.ImageData
+                }).ToArray() 
+                : Array.Empty<ImageFileDto>()
         }).ToArray();
     }
 

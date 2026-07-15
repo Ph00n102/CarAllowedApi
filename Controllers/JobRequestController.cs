@@ -102,12 +102,39 @@ namespace CarAllowedApi.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
+        [HttpGet("GetAllListDate")]
+        public async Task<ActionResult<JobRequestCarAllDayDto[]>> GetAllListDateJobRequestCars(
+            [FromQuery] DateTime? startDate = null)  // เพิ่ม parameter สำหรับรับวันที่
+        {
+            try
+            {
+                var list = await _service.GetAllListByDateJobRequestCarsAsync(startDate);
+                return Ok(list);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
         [HttpGet("GetCOUNTListDay/{name?}")]
         public async Task<ActionResult<JobRequestCarAllDayDto[]>> GetCOUNTListDayJobRequestCars(string name = null, int statusId = 0)
         {
             try
             {
                 var list = await _service.GetCOUNTListDayJobRequestCarsAsync(name, statusId);
+                return Ok(list);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+        [HttpGet("GetEmpCOUNTListDayJobRequestCars/{name?}")]
+        public async Task<ActionResult<JobRequestCarAllDayDto[]>> GetEmpCOUNTListDayJobRequestCars(string name = null, int statusId = 0)
+        {
+            try
+            {
+                var list = await _service.GetEmpCOUNTListDayJobRequestCarsAsync(name, statusId);
                 return Ok(list);
             }
             catch (Exception ex)

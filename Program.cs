@@ -25,6 +25,7 @@ builder.Services.AddDbContext<DivisionsDbContext>(opt =>
 builder.Services.AddScoped<IJobRequestCarService, JobRequestCarService>();
 builder.Services.AddScoped<IImageEmpService, ImageEmpService>();
 builder.Services.AddScoped<IDivisionsService, DivisionsService>();
+builder.Services.AddScoped<IPublicHolidayService, PublicHolidayService>();
 
 var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
